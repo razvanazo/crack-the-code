@@ -6,7 +6,8 @@ import ErrorPopup from "@/components/ErrorPopup.vue";
 import GenericPopup from "@/components/GenericPopup.vue";
 import LoadingDots from "@/components/LoadingDots.vue";
 import PlayerIconTimer from "@/components/PlayerIconTimer.vue";
-import defaultIcon from '@/components/icons/logo.svg'; // Import default icon
+import defaultIcon from '@/components/icons/logo.svg';
+import ChatPopup from "@/components/ChatPopup.vue"; // Import default icon
 
 const code = ref('')
 const isSetCode = ref(false)
@@ -250,6 +251,7 @@ socket.on('player-starts', (player) => {
             <DefaultButton @click="startGame">Set code</DefaultButton>
         </div>
     </div>
+    <ChatPopup/>
 </template>
 
 <style scoped>

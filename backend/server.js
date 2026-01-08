@@ -106,6 +106,10 @@ io.sockets.on("connection", function (socket) {
     socket.on('disconnect', function () {
         leaveRoom(socket)
     })
+
+    socket.on('sendMessage', function (message) {
+        socket.to(socket.currentRoom).emit("newMessage", message);
+    })
 })
 
 instrument(io, {auth: false});
