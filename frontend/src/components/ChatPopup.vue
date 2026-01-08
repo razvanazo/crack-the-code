@@ -47,6 +47,11 @@ const messages = ref([]);
 const newMessage = ref('');
 const messagesContainer = ref(null);
 
+if (sessionStorage.getItem('messages')) {
+    const stored = JSON.parse(sessionStorage.getItem('messages'));
+    messages.value = Array.isArray(stored) ? stored : [];
+}
+
 function toggleChat() {
     isOpen.value = !isOpen.value;
     scrollToBottom();
@@ -66,10 +71,17 @@ function sendMessage() {
 
     newMessage.value = '';
     scrollToBottom();
+    console.log(messages.value);
+    sessionStorage.setItem('messages', JSON.stringify(messages.value));
 }
 
 socket.on("newMessage", message => {
     messages.value.push({ text: message, from: 'other' });
+    sessionStorage.setItem('messages', JSON.stringify(messages.value));
+})
+
+socket.on('opponent-leaved', () => {
+    close();
 })
 
 function scrollToBottom() {
