@@ -1,0 +1,134 @@
+.chat-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25d366;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Overlay */
+.chat-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 20px;
+    z-index: 50;
+}
+
+/* Popup */
+.chat-popup {
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+    height: 400px; /* sau max-height */
+    background: #f0f2f5;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    overflow: hidden;
+}
+
+/* Header */
+.chat-header {
+    flex: 0 0 auto;
+    background: #075e54;
+    color: white;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* Mesaje scrollabile */
+.chat-messages {
+    flex: 1 1 auto;
+    min-height: 0; /* crucial pentru overflow în flexbox */
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mesaje cealaltă persoană */
+.message:not(.self) {
+    background: white;
+    color: #111;
+    align-self: flex-start;
+    padding: 8px 12px;
+    border-radius: 18px 18px 18px 4px;
+    margin-bottom: 8px;
+    max-width: 75%;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+/* Mesaje self */
+.message.self {
+    background: #dcf8c6;
+    color: #111;
+    align-self: flex-end;
+    padding: 8px 12px;
+    border-radius: 18px 18px 4px 18px;
+    margin-bottom: 8px;
+    max-width: 75%;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+/* Input + buton trimite fix jos */
+.chat-input {
+    flex: 0 0 auto;
+    padding: 8px;
+    border-top: 1px solid #ddd;
+    display: flex;
+    background: #f0f2f5;
+}
+
+.chat-input input {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 12px;
+    outline: none;
+    font-size: 14px;
+    background: white;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    margin-right: 6px;
+}
+
+.send-btn {
+    background: #25d366;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.send-btn:hover {
+    background: #1ebe5d;
+}
+
+button {
+    padding: unset;
+}
