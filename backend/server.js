@@ -18,7 +18,6 @@ const leaveRoom = (socket) => {
     const playerId = socket.playerId;
 
     if (!roomId || !games[roomId]) {
-        console.log(`Room ${roomId} does not exist or already deleted.`);
         socket.leave(roomId);
         return;
     }
@@ -27,19 +26,14 @@ const leaveRoom = (socket) => {
 
     if (room.players && room.players[playerId]) {
         delete room.players[playerId];
-        console.log(`Player ${playerId} left room ${roomId}`);
-    } else {
-        console.log(`Player ${playerId} not found in room ${roomId}`);
     }
 
     // If no players are left, delete the room entirely
     if (!room.players || Object.keys(room.players).length === 0) {
-        console.log(`Room ${roomId} is now empty. Deleting room.`);
         delete games[roomId];
     } else {
-        // Optionally, mark game as not started if necessary
         room.started = false;
-        console.log(`Room ${roomId} still has players. Game stopped.`);
+        socket.to(roomId).emit('opponent-leaved');
     }
 
     socket.leave(roomId);
@@ -149,10 +143,6 @@ io.sockets.on("connection", function (socket) {
        leaveRoom(socket)
     })
 
-    // socket.on('disconnect', function () {
-    //     leaveRoom(socket)
-    // })
-
     socket.on('sendMessage', function (message) {
         socket.to(socket.currentRoom).emit("newMessage", message);
     })
@@ -171,7 +161,7 @@ io.sockets.on("connection", function (socket) {
 
             if (game.started) {
                 socket.gameCode = player.gameCode;
-                socket.emit('game-start', true)
+                socket.emit('reenter')
             }
         }
 

@@ -7,11 +7,12 @@ const timerRef = ref(null);
 
 const props = defineProps({
     myClass: {type: String, required: true},
-    icon: {type: String, default: defaultIcon} // Added icon prop with a default
+    icon: {type: String, default: defaultIcon}, // Added icon prop with a default
+    duration: {type: String, default: 30},
 })
 
-function start() {
-    timerRef.value.start();
+function start(seconds = props.duration) {
+    timerRef.value.start(seconds);
 }
 
 function stop() {
@@ -30,7 +31,7 @@ defineExpose(
     <div class="timer-container">
         <img :src="props.icon" class="main-image"/>
         <div class="radial-timer-container">
-            <RadialTimer ref="timerRef" :duration="30" @finished="done" :my-class="props.myClass"/>
+            <RadialTimer ref="timerRef" :duration="props.duration" @finished="done" :my-class="props.myClass"/>
         </div>
     </div>
 </template>
