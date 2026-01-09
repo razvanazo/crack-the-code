@@ -219,16 +219,6 @@ socket.on('player-starts', (player) => {
             <div class="player">
                 <PlayerIconTimer ref="playerRef" my-class="player" :icon="myIcon"/>
             </div>
-            <div class="message-container">
-                <img :src="myIcon" style="width: 10px; height: 10px" @click="showMessagePopup = !showMessagePopup">
-                <GenericPopup ref="showMessagePopupRef" v-model="showMessagePopup">
-                    <div class="waiting-opponent">
-                        <p>Waiting for opponent</p>
-                        <LoadingDots/>
-                        <button @click="showMessagePopupRef.close()">Buton</button>
-                    </div>
-                </GenericPopup>
-            </div>
         </div>
 
         <div class="set-code" v-if="!isSetCode">
