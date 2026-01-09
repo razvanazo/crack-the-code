@@ -2,7 +2,6 @@ const { Server } = require("socket.io");
 const { instrument } = require("@socket.io/admin-ui")
 const io = new Server();
 
-const waitingList = {};
 const games = {};
 
 io.attach(3001, {
@@ -15,9 +14,42 @@ io.attach(3001, {
 });
 
 const leaveRoom = (socket) => {
-    socket.to(socket.currentRoom).emit("opponent-leaved");
-    socket.leave(socket.currentRoom);
-    delete socket.currentRoom;
+    const roomId = socket.currentRoom;
+    const playerId = socket.playerId;
+
+    if (!roomId || !games[roomId]) {
+        console.log(`Room ${roomId} does not exist or already deleted.`);
+        socket.leave(roomId);
+        return;
+    }
+
+    const room = games[roomId];
+
+    if (room.players && room.players[playerId]) {
+        delete room.players[playerId];
+        console.log(`Player ${playerId} left room ${roomId}`);
+    } else {
+        console.log(`Player ${playerId} not found in room ${roomId}`);
+    }
+
+    // If no players are left, delete the room entirely
+    if (!room.players || Object.keys(room.players).length === 0) {
+        console.log(`Room ${roomId} is now empty. Deleting room.`);
+        delete games[roomId];
+    } else {
+        // Optionally, mark game as not started if necessary
+        room.started = false;
+        console.log(`Room ${roomId} still has players. Game stopped.`);
+    }
+
+    socket.leave(roomId);
+}
+
+const clearGameCodes = (socket) => {
+    games[socket.currentRoom].started = false;
+    Object.values(games[socket.currentRoom].players).map(player => {
+        delete player.gameCode;
+    })
 }
 
 const getRoom = (room) => {
@@ -32,6 +64,7 @@ const playerStarts = (socket) => {
 
 io.sockets.on("connection", function (socket) {
     const { playerId } = socket.handshake.auth;
+    socket.playerId = playerId;
 
     socket.on("join-room", function (user, cb) {
         const room = getRoom(user.room);
@@ -47,17 +80,22 @@ io.sockets.on("connection", function (socket) {
 
             if (games[user.room] === undefined) {
                 games[user.room] = {
-                    players: [],
+                    players: {},
                     started: false,
                 }
             }
 
-            games[user.room].players.push(playerId);
+            games[user.room].players[playerId] = {
+                username: user.name,
+                icon: user.icon,
+                currentRoom: user.room,
+            };
         }
     })
 
     socket.on("set-code", function (code) {
         socket.gameCode = code;
+        games[socket.currentRoom].players[playerId].code = code;
 
         const roomSockets = io.sockets.adapter.rooms.get(socket.currentRoom);
         if (roomSockets && roomSockets.size === 2) {
@@ -74,41 +112,70 @@ io.sockets.on("connection", function (socket) {
                     name: opponentSocket.username,
                     icon: opponentSocket.icon
                 });
+                games[socket.currentRoom].started = true;
             }
         }
 
-
-        if (waitingList[socket.currentRoom] === undefined) {
-            waitingList[socket.currentRoom] = playerId;
-        } else {
-            delete waitingList[socket.currentRoom];
+        if (Object.keys(games[socket.currentRoom].players).length === 2) {
             io.to(socket.currentRoom).emit("game-start", true);
             playerStarts(socket);
         }
     })
 
-    socket.on('guess-code', function (code) {
-        socket.to(socket.currentRoom).emit("validate-code", code);
-    })
+    socket.on('guess-code', function (code, response) {
+        let correctDigits = 0,
+            codeAsArray = String(code).split(''),
+            opponentId = Object.keys(games[socket.currentRoom].players).find(id => id !== socket.playerId),
+            res = games[socket.currentRoom].players[opponentId].code,
+            resArray = res.split('');
 
-    socket.on('code-valid', () => {
-        socket.to(socket.currentRoom).emit("correct-code", true);
-    })
+        if (res === String(code)) {
+            response({correctDigits: res.length, value:true});
+            socket.to(socket.currentRoom).emit('opponent-win');
+            clearGameCodes(socket);
+        } else {
+            for (let i = 0; i < 4; i++) {
+                if (codeAsArray[i] === resArray[i]) {
+                    correctDigits++;
+                }
+            }
 
-    socket.on('wrong', function (code, message) {
-        socket.to(socket.currentRoom).emit("wrong-code", code, message);
+            response({correctDigits: correctDigits, value:false});
+            socket.to(socket.currentRoom).emit('opponent-guess', code)
+        }
     })
 
     socket.on('leave-room', function () {
        leaveRoom(socket)
     })
 
-    socket.on('disconnect', function () {
-        leaveRoom(socket)
-    })
+    // socket.on('disconnect', function () {
+    //     leaveRoom(socket)
+    // })
 
     socket.on('sendMessage', function (message) {
         socket.to(socket.currentRoom).emit("newMessage", message);
+    })
+
+    socket.on('rejoin', function (room, cb) {
+        let game = games[room];
+        let player = game?.players?.[socket.playerId]
+
+        if (player) {
+            socket.join(room);
+            cb(true);
+
+            socket.username = player.username;
+            socket.currentRoom = room;
+            socket.icon = player.icon;
+
+            if (game.started) {
+                socket.gameCode = player.gameCode;
+                socket.emit('game-start', true)
+            }
+        }
+
+        cb(false);
     })
 })
 

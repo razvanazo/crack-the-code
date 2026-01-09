@@ -68,6 +68,7 @@ const onSubmit = async () => {
     let sessionUser = { ...user };
     delete sessionUser.room;
     sessionStorage.setItem('user', JSON.stringify(sessionUser));
+    sessionStorage.setItem('room', user.room);
 
     socket.emit('join-room', user, (joined) => {
         if (joined) {

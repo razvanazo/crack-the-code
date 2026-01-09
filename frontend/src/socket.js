@@ -15,13 +15,25 @@ const socket = io("/", {
     transports: ["websocket"],
     credentials: true,
     reconnection: true,
-    auth: { playerId }
+    auth: { playerId },
+    timeout: 60000,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000,
 });
 
 socket.on("connect", () => {
-    if(router.currentRoute.value.path !== '/') {
-        if (router.currentRoute.value.path === '/test') return;
-        router.push("/");
+    if(router.currentRoute.value.path === '/game') {
+        const room = sessionStorage.getItem("room") || null;
+        console.log(room)
+
+        if (room) {
+            socket.emit('rejoin', room, (response) => {
+                console.log(response)
+                if (!response) {
+                    router.push("/");
+                }
+            });
+        }
     }
 })
 

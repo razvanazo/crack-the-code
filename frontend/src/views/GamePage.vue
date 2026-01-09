@@ -115,49 +115,22 @@ socket.on('game-start', function (res) {
   gameStarted.value = res;
 })
 
-socket.on('validate-code', (res) => {
-    console.log(typeof res);
-    if (res === String(code.value)) {
-        socket.emit('code-valid')
-        showError("You lost!")
-        resetGame()
-    } else {
-        let correctDigits = 0,
-          codeAsArray = String(code.value).split(''),
-          resArray = res.split('');
-
-        for (let i = 0; i < 4; i++) {
-          if (codeAsArray[i] === resArray[i]) {
-            correctDigits++;
-          }
-        }
-        player2trying.value.push(res);
-        let message = `${correctDigits} in the correct position`;
-        socket.emit('wrong', res, message)
-        // guess.value = ''
-        playerRef.value.start()
-        opponentRef.value.stop()
-  }
-    disableGuess.value = false
-})
-
-socket.on('correct-code', () => {
-    showError('You won!')
-    resetGame()
-})
-
-socket.on('wrong-code', (code, message) => {
-    trying.value.push({code: code, message: message})
-})
-
 const guessCode = async () => {
     if (!validateCode(guess.value)) {
         return
     }
     if (disableGuess.value) return;
 
-    socket.emit('guess-code', String(guess.value));
-    guess.value = ''
+    socket.emit('guess-code', String(guess.value), response => {
+        if (response.value) {
+            showError('You won!')
+            resetGame()
+        } else {
+            let message = `${response.correctDigits} in the correct position`;
+            trying.value.push({code: guess.value, message: message})
+            guess.value = ''
+        }
+    });
 
     nextTick().then(() => {
         document.querySelector('#guess_input').focus();
@@ -175,6 +148,18 @@ const validateCode = (code) => {
 
     return true
 }
+
+socket.on('opponent-guess', (code) => {
+    player2trying.value.push(code);
+    playerRef.value.start();
+    opponentRef.value.stop();
+    disableGuess.value = false;
+})
+
+socket.on('opponent-win', () => {
+    showError('You lost!')
+    resetGame()
+})
 
 socket.on('opponent-leaved', () => {
     showError('You won!')
