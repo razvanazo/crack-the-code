@@ -22,8 +22,6 @@ const opponentRef = ref(null);
 const playerRef = ref(null);
 const disableGuess = ref(false);
 const inputCodeRef = ref(null); // Added ref for input-code
-const showMessagePopup = ref(false);
-const showMessagePopupRef = ref(null);
 const myIcon = ref(defaultIcon); // Reactive variable for the user's icon
 const opponentIcon = ref(defaultIcon); // Reactive variable for the opponent's icon
 
@@ -73,7 +71,21 @@ watch(isSetCode, (newValue) => {
 onUnmounted(() => {
     socket.emit('leave-room');
     socket.removeAllListeners();
+    sessionStorage.removeItem('messages');
 })
+
+function startMyTimer(time = null) {
+    opponentRef.value?.stop();
+    time ? playerRef.value?.start(time) : playerRef.value?.start();
+    disableGuess.value = false;
+}
+
+function startOpponentTimer(time = null) {
+    playerRef.value?.stop();
+
+    time ? opponentRef.value?.start(time) : opponentRef.value.start();
+    disableGuess.value = true;
+}
 
 const digitsOnly = (e) => {
     if (!e.data) return;
@@ -134,9 +146,7 @@ const guessCode = async () => {
 
     nextTick().then(() => {
         document.querySelector('#guess_input').focus();
-        disableGuess.value = true;
-        playerRef.value.stop();
-        opponentRef.value.start();
+        startOpponentTimer();
     })
 }
 
@@ -151,9 +161,7 @@ const validateCode = (code) => {
 
 socket.on('opponent-guess', (code) => {
     player2trying.value.push(code);
-    playerRef.value.start();
-    opponentRef.value.stop();
-    disableGuess.value = false;
+    startMyTimer();
 })
 
 socket.on('opponent-win', () => {
@@ -164,6 +172,12 @@ socket.on('opponent-win', () => {
 socket.on('opponent-leaved', () => {
     showError('You won!')
     resetGame()
+    sessionStorage.removeItem('messages');
+})
+
+socket.on('reenter', () => {
+    isSetCode.value = true
+    gameStarted.value = true
 })
 
 socket.on('player-starts', (player) => {
