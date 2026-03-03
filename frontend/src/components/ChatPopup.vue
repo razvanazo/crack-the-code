@@ -42,6 +42,8 @@
 import { ref } from 'vue';
 import socket from "@/socket.js";
 
+const emit = defineEmits(['newMessageSent','messageReceived']);
+
 const isOpen = ref(false);
 const messages = ref([]);
 const newMessage = ref('');
@@ -65,19 +67,21 @@ function sendMessage() {
     const text = newMessage.value.trim();
     if (!text) return;
 
+    emit('newMessageSent', text);
+
     messages.value.push({ text: text, from: 'self' });
 
     socket.emit("sendMessage", text)
 
     newMessage.value = '';
     scrollToBottom();
-    console.log(messages.value);
     sessionStorage.setItem('messages', JSON.stringify(messages.value));
 }
 
 socket.on("newMessage", message => {
     messages.value.push({ text: message, from: 'other' });
     sessionStorage.setItem('messages', JSON.stringify(messages.value));
+    emit("messageReceived", message);
 })
 
 socket.on('opponent-leaved', () => {

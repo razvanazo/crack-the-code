@@ -51,9 +51,21 @@ const getRoom = (room) => {
 }
 
 const playerStarts = (socket) => {
-    const players = [...io.sockets.adapter.rooms.get(socket.currentRoom) || []];
+    const players = [...Object.keys(games[socket.currentRoom].players) || []];
     const randomPlayerId = players[Math.floor(Math.random() * players.length)];
+    console.log(players, randomPlayerId);
+    nextPlayer(socket, randomPlayerId);
     io.to(socket.currentRoom).emit("player-starts", randomPlayerId);
+}
+
+const getOpponentId = (socket) => {
+    return Object.keys(games[socket.currentRoom].players).find(id => id !== games[socket.currentRoom].currentPlayer);
+}
+
+const nextPlayer = (socket, opponentId = null) => {
+    opponentId = opponentId || getOpponentId(socket);
+    games[socket.currentRoom].currentPlayer = opponentId;
+    games[socket.currentRoom].lastChange = new Date().getTime();
 }
 
 io.sockets.on("connection", function (socket) {
@@ -117,10 +129,10 @@ io.sockets.on("connection", function (socket) {
     })
 
     socket.on('guess-code', function (code, response) {
+        console.log(games)
         let correctDigits = 0,
             codeAsArray = String(code).split(''),
-            opponentId = Object.keys(games[socket.currentRoom].players).find(id => id !== socket.playerId),
-            res = games[socket.currentRoom].players[opponentId].code,
+            res = games[socket.currentRoom].players[getOpponentId(socket)].code,
             resArray = res.split('');
 
         if (res === String(code)) {
@@ -135,6 +147,7 @@ io.sockets.on("connection", function (socket) {
             }
 
             response({correctDigits: correctDigits, value:false});
+            nextPlayer(socket);
             socket.to(socket.currentRoom).emit('opponent-guess', code)
         }
     })
@@ -161,11 +174,20 @@ io.sockets.on("connection", function (socket) {
 
             if (game.started) {
                 socket.gameCode = player.gameCode;
-                socket.emit('reenter')
+                game = games[socket.currentRoom];
+                let elapsedTimeSeconds = Math.floor((new Date().getTime() - game.lastChange) / 1000);
+
+                let remainedTime = 30 - elapsedTimeSeconds % 30;
+                socket.emit('reenter', remainedTime, game.currentPlayer === socket.playerId);
             }
         }
 
         cb(false);
+    })
+
+    socket.on('time-up', function () {
+        io.to(socket.currentRoom).emit("player-starts", getOpponentId(socket));
+        nextPlayer(socket);
     })
 })
 

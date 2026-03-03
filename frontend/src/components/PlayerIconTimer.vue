@@ -2,13 +2,14 @@
 import RadialTimer from "@/components/RadialTimer.vue";
 import {ref} from "vue";
 import defaultIcon from '@/components/icons/logo.svg';
+import socket from "@/socket.js";
 
 const timerRef = ref(null);
 
 const props = defineProps({
     myClass: {type: String, required: true},
     icon: {type: String, default: defaultIcon}, // Added icon prop with a default
-    duration: {type: String, default: 30},
+    duration: {type: Number, default: 30},
 })
 
 function start(seconds = props.duration) {
@@ -17,6 +18,10 @@ function start(seconds = props.duration) {
 
 function stop() {
     timerRef.value.stop();
+}
+
+function done() {
+    socket.emit('time-up');
 }
 
 defineExpose(
