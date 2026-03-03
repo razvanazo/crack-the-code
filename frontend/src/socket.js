@@ -24,11 +24,9 @@ const socket = io("/", {
 socket.on("connect", () => {
     if(router.currentRoute.value.path === '/game') {
         const room = sessionStorage.getItem("room") || null;
-        console.log(room)
 
         if (room) {
             socket.emit('rejoin', room, (response) => {
-                console.log(response)
                 if (!response) {
                     router.push("/");
                 }

@@ -42,8 +42,8 @@ function start(seconds = props.duration) {
     let startTime = Date.now();
 
     function animate() {
-        const now = Date.now();
-        let progress = (now - startTime) / (seconds * 1000);
+        const now = Date.now() + (props.duration - seconds) * 1000;
+        let progress = (now - startTime) / (props.duration * 1000);
         if (progress > 1) progress = 1;
 
         circle.style.strokeDashoffset = full - full * progress;
